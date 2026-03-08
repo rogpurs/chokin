@@ -1,0 +1,26 @@
+# セキュリティヘッダー
+<IfModule mod_headers.c>
+    Header set X-Content-Type-Options "nosniff"
+    Header set X-Frame-Options "DENY"
+    Header set X-XSS-Protection "1; mode=block"
+</IfModule>
+
+# includes/storageディレクトリへのアクセス拒否
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+    RewriteRule ^includes/ - [F,L]
+    RewriteRule ^storage/ - [F,L]
+    RewriteRule ^sql/ - [F,L]
+</IfModule>
+
+# PHP設定
+<IfModule mod_php.c>
+    php_value session.cookie_httponly 1
+    php_value session.use_strict_mode 1
+</IfModule>
+
+# ディレクトリリスティング無効
+Options -Indexes
+
+# デフォルト文字コード
+AddDefaultCharset UTF-8

@@ -1,165 +1,119 @@
 import { useCallback, useEffect, useState } from "react";
-import { clearToken, fetchDashboard, fetchReports, fetchSetupStatus } from "./api/client";
-import type { DashboardData, MonthlyReport, User } from "./types";
-import SetupWizard from "./components/SetupWizard";
-import AuthScreen from "./components/AuthScreen";
-import ProgressBar from "./components/ProgressBar";
-import TransactionForm from "./components/TransactionForm";
-import GoalSavingForm from "./components/GoalSavingForm";
-import ClosePeriodForm from "./components/ClosePeriodForm";
-import ReportsPanel from "./components/ReportsPanel";
-import SettingsPanel from "./components/SettingsPanel";
-import { formatCurrency, formatDateJp } from "./utils/format";
+import { Routes, Route, Navigate, Outlet, NavLink, useNavigate } from "react-router-dom";
+import { fetchSetupStatus } from "./api/client";
+import { useAuth } from "./contexts/AuthContext";
+import BottomNav from "./components/ui/BottomNav";
+import Sidebar from "./components/ui/Sidebar";
+import SetupPage from "./pages/SetupPage";
+import AuthPage from "./pages/AuthPage";
+import OnboardingPage from "./pages/OnboardingPage";
+import HomePage from "./pages/HomePage";
+import RecordPage from "./pages/RecordPage";
+import HistoryPage from "./pages/HistoryPage";
+import GoalsPage from "./pages/GoalsPage";
+import GoalDetailPage from "./pages/GoalDetailPage";
+import AccountsPage from "./pages/AccountsPage";
+import CategoriesPage from "./pages/CategoriesPage";
+import IncomeSourcesPage from "./pages/IncomeSourcesPage";
+import ReportsPage from "./pages/ReportsPage";
+import SettingsPage from "./pages/SettingsPage";
 
-type ScreenState = "loading" | "setup" | "auth" | "app";
+type BootState = "loading" | "setup" | "ready";
+
+const AppLayout = (): JSX.Element => {
+  return (
+    <div className="flex min-h-screen">
+      <div className="hidden md:block">
+        <Sidebar />
+      </div>
+      <main className="flex-1 pb-20 md:ml-60 md:pb-0">
+        <div className="mx-auto max-w-4xl p-4 md:p-6">
+          <Outlet />
+        </div>
+      </main>
+      <div className="md:hidden">
+        <BottomNav />
+      </div>
+    </div>
+  );
+};
 
 const App = (): JSX.Element => {
-  const [screen, setScreen] = useState<ScreenState>("loading");
-  const [user, setUser] = useState<User | null>(null);
-  const [dashboard, setDashboard] = useState<DashboardData | null>(null);
-  const [reports, setReports] = useState<MonthlyReport[]>([]);
-  const [error, setError] = useState("");
+  const { user, token, isLoading } = useAuth();
+  const [bootState, setBootState] = useState<BootState>("loading");
 
-  const refreshAppData = useCallback(async (): Promise<void> => {
-    const [dash, list] = await Promise.all([fetchDashboard(), fetchReports()]);
-    setDashboard(dash);
-    setReports(list);
-  }, []);
-
-  const boot = useCallback(async (): Promise<void> => {
-    setError("");
+  const checkSetup = useCallback(async () => {
     try {
       const status = await fetchSetupStatus();
       if (!status.installed) {
-        setScreen("setup");
-        return;
+        setBootState("setup");
+      } else {
+        setBootState("ready");
       }
-      setScreen("auth");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "初期化失敗");
+    } catch {
+      setBootState("ready");
     }
   }, []);
 
   useEffect(() => {
-    void boot();
-  }, [boot]);
+    checkSetup();
+  }, [checkSetup]);
 
-  useEffect(() => {
-    if (screen !== "app") {
-      return;
-    }
-    void refreshAppData().catch((err) => {
-      setError(err instanceof Error ? err.message : "データ取得失敗");
-      setScreen("auth");
-    });
-  }, [screen, refreshAppData]);
-
-  if (screen === "loading") {
-    return <div className="p-6">読み込み中...</div>;
-  }
-
-  if (screen === "setup") {
-    return <SetupWizard onDone={boot} />;
-  }
-
-  if (screen === "auth") {
+  if (bootState === "loading" || isLoading) {
     return (
-      <AuthScreen
-        onLogin={(nextUser) => {
-          setUser(nextUser);
-          setScreen("app");
-        }}
-      />
+      <div className="flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <p className="text-sm text-muted">読み込み中...</p>
+        </div>
+      </div>
     );
   }
 
-  if (!dashboard || !user) {
-    return <div className="p-6">読み込み中...</div>;
+  if (bootState === "setup") {
+    return (
+      <Routes>
+        <Route path="/setup" element={<SetupPage onComplete={() => setBootState("ready")} />} />
+        <Route path="*" element={<Navigate to="/setup" replace />} />
+      </Routes>
+    );
+  }
+
+  if (!token || !user) {
+    return (
+      <Routes>
+        <Route path="/login" element={<AuthPage mode="login" />} />
+        <Route path="/register" element={<AuthPage mode="register" />} />
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    );
+  }
+
+  if (!user.onboarding_completed_at) {
+    return (
+      <Routes>
+        <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="*" element={<Navigate to="/onboarding" replace />} />
+      </Routes>
+    );
   }
 
   return (
-    <main className="mx-auto flex min-h-screen w-full max-w-6xl flex-col gap-4 p-4 sm:p-6">
-      <header className="rounded-xl bg-white p-5 shadow-sm">
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <div>
-            <p className="text-sm text-slate-500">ログイン中: {user.username}</p>
-            <h1 className="text-2xl font-bold">{dashboard.period.label}</h1>
-            <p className="text-slate-600">{formatDateJp(dashboard.period.startDate)}〜{formatDateJp(dashboard.period.endDate)}</p>
-          </div>
-          <button
-            className="rounded bg-slate-700 px-3 py-2 text-sm text-white"
-            onClick={() => {
-              clearToken();
-              setUser(null);
-              setScreen("auth");
-            }}
-          >
-            ログアウト
-          </button>
-        </div>
-      </header>
-
-      {error && <p className="text-sm text-red-600">{error}</p>}
-
-      <section className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-xl bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">次の給料日まで</p>
-          <p className="text-4xl font-bold text-primary">{dashboard.period.daysUntilPayday}日</p>
-          <p className="text-sm text-slate-500">期間進捗 {dashboard.period.periodProgressRate}%</p>
-          <div className="mt-2"><ProgressBar value={dashboard.period.periodProgressRate} /></div>
-        </article>
-        <article className="rounded-xl bg-white p-5 shadow-sm">
-          <p className="text-sm text-slate-500">全口座の合計資産</p>
-          <p className="text-3xl font-bold">{formatCurrency(dashboard.totalAssets)}</p>
-        </article>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold">口座一覧</h2>
-          <ul className="mt-3 space-y-2">
-            {dashboard.accounts.map((account) => (
-              <li key={account.id} className="rounded border p-3">
-                <p className="font-semibold">{account.name}</p>
-                <p className="text-sm text-slate-500">{account.type}</p>
-                <p className="text-right font-semibold">{formatCurrency(account.balance)}</p>
-              </li>
-            ))}
-          </ul>
-        </article>
-
-        <article className="rounded-xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold">貯金目標一覧</h2>
-          <ul className="mt-3 space-y-3">
-            {dashboard.goals.map((goal) => (
-              <li key={goal.id} className="rounded border p-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-semibold">{goal.name}</p>
-                  <p className="text-sm">{goal.progressRate}%</p>
-                </div>
-                <p className="text-sm">{formatCurrency(goal.current_savings)} / {formatCurrency(goal.target_amount)}</p>
-                <div className="mt-2"><ProgressBar value={goal.progressRate} /></div>
-                <p className="mt-1 text-xs text-slate-500">締切: {goal.deadline ?? "未設定"}</p>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-4 rounded bg-slate-100 p-3">
-            <p className="text-sm">全体目標進捗 {dashboard.overallProgressRate}%</p>
-            <p className="text-sm">{formatCurrency(dashboard.totalCurrentSavings)} / {formatCurrency(dashboard.totalGoalAmount)}</p>
-            <div className="mt-2"><ProgressBar value={dashboard.overallProgressRate} /></div>
-          </div>
-        </article>
-      </section>
-
-      <section className="grid gap-4 lg:grid-cols-2">
-        <TransactionForm accounts={dashboard.accounts} onSuccess={refreshAppData} />
-        <GoalSavingForm goals={dashboard.goals} onSaved={refreshAppData} />
-      </section>
-
-      <ClosePeriodForm onSaved={refreshAppData} />
-      <ReportsPanel reports={reports} />
-      <SettingsPanel />
-    </main>
+    <Routes>
+      <Route element={<AppLayout />}>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/record" element={<RecordPage />} />
+        <Route path="/history" element={<HistoryPage />} />
+        <Route path="/goals" element={<GoalsPage />} />
+        <Route path="/goals/:id" element={<GoalDetailPage />} />
+        <Route path="/accounts" element={<AccountsPage />} />
+        <Route path="/categories" element={<CategoriesPage />} />
+        <Route path="/income-sources" element={<IncomeSourcesPage />} />
+        <Route path="/reports" element={<ReportsPage />} />
+        <Route path="/settings" element={<SettingsPage />} />
+      </Route>
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
   );
 };
 

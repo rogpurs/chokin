@@ -1,4 +1,5 @@
 import type { DbExecutor } from "./adapter";
+import { runMigrations } from "./migration";
 
 export const createSchema = async (db: DbExecutor): Promise<void> => {
   await db.run(`
@@ -101,4 +102,7 @@ export const createSchema = async (db: DbExecutor): Promise<void> => {
       updated_at TEXT NOT NULL
     )
   `);
+
+  // Run incremental migrations for new columns, tables, and indexes
+  await runMigrations(db);
 };

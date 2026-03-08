@@ -10,23 +10,13 @@ export const registerUser = async (username: string, email: string, password: st
   const normalizedEmail = email.toLowerCase().trim();
   const cleanName = username.trim();
 
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) {
-    throw new Error("メールアドレスが不正です");
-  }
-  if (cleanName.length < 2 || cleanName.length > 40) {
-    throw new Error("ユーザー名は2-40文字で入力してください");
-  }
-  if (password.length < 10) {
-    throw new Error("パスワードは10文字以上にしてください");
-  }
-  if (!Number.isInteger(salaryDay) || salaryDay < 1 || salaryDay > 28) {
-    throw new Error("salaryDay は1-28で指定してください");
-  }
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(normalizedEmail)) throw new Error("メールアドレスが不正です");
+  if (cleanName.length < 2 || cleanName.length > 40) throw new Error("ユーザー名は2-40文字で入力してください");
+  if (password.length < 10) throw new Error("パスワードは10文字以上にしてください");
+  if (!Number.isInteger(salaryDay) || salaryDay < 1 || salaryDay > 28) throw new Error("salaryDay は1-28で指定してください");
 
   const existing = await db.get<{ id: number }>("SELECT id FROM users WHERE email = ?", [normalizedEmail]);
-  if (existing) {
-    throw new Error("このメールアドレスは既に使われています");
-  }
+  if (existing) throw new Error("このメールアドレスは既に使われています");
 
   const hash = await bcrypt.hash(password, 12);
   const now = nowIso();
@@ -37,16 +27,17 @@ export const registerUser = async (username: string, email: string, password: st
   );
 };
 
+const USER_SELECT_FIELDS = `id, username, email, salary_day, display_name, line_user_id,
+  onboarding_completed_at, budgeting_anchor_type, budgeting_anchor_day, period_start_rule,
+  theme, reduce_motion, notification_level`;
+
 export const login = async (email: string, password: string): Promise<{ token: string; user: User }> => {
   const db = getDb();
   const setup = getSetup();
-  if (!setup) {
-    throw new Error("セットアップ未完了です");
-  }
+  if (!setup) throw new Error("セットアップ未完了です");
 
-  const row = await db.get<(User & { password_hash: string })>(
-    `SELECT id, username, email, salary_day, line_user_id, push_endpoint, push_p256dh, push_auth, password_hash
-     FROM users WHERE email = ?`,
+  const row = await db.get<User & { password_hash: string }>(
+    `SELECT ${USER_SELECT_FIELDS}, password_hash FROM users WHERE email = ?`,
     [email.toLowerCase().trim()]
   );
 
@@ -55,7 +46,7 @@ export const login = async (email: string, password: string): Promise<{ token: s
   }
 
   const token = jwt.sign({ userId: row.id }, setup.jwtSecret, {
-    expiresIn: "12h",
+    expiresIn: "7d",
     issuer: "chokin-app",
     audience: "chokin-client"
   });
@@ -66,9 +57,7 @@ export const login = async (email: string, password: string): Promise<{ token: s
 
 export const verifyToken = (token: string): { userId: number } => {
   const setup = getSetup();
-  if (!setup) {
-    throw new Error("セットアップ未完了です");
-  }
+  if (!setup) throw new Error("セットアップ未完了です");
   return jwt.verify(token, setup.jwtSecret, {
     issuer: "chokin-app",
     audience: "chokin-client"

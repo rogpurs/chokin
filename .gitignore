@@ -1,0 +1,35 @@
+# macOS
+.DS_Store
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+client/dist/
+server/dist/
+
+# Env
+.env
+.env.*
+
+# SQLite
+server/data/*.sqlite
+server/data/*.sqlite3
+server/data/*.db
+
+# Vite PWA generated
+client/dev-dist/
+client/.vite/
+
+# Logs
+*.log
+
+# TypeScript build info
+*.tsbuildinfo
+
+# Setup secrets
+server/data/setup.json

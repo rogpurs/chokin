@@ -5,22 +5,31 @@ interface StatCardProps {
   trend?: "up" | "down" | "neutral";
   trendValue?: string;
   className?: string;
+  accent?: "primary" | "success" | "danger" | "warn" | "accent";
 }
 
-const StatCard = ({ label, value, sub, trend, trendValue, className = "" }: StatCardProps): JSX.Element => {
-  const trendColor =
-    trend === "up" ? "text-success" : trend === "down" ? "text-danger" : "text-muted";
+const accentMap = {
+  primary: { bg: "bg-primary/10", text: "text-primary" },
+  success: { bg: "bg-success/10", text: "text-success" },
+  danger: { bg: "bg-danger/10", text: "text-danger" },
+  warn: { bg: "bg-warn/10", text: "text-warn" },
+  accent: { bg: "bg-accent/10", text: "text-accent" },
+};
 
-  const trendIcon =
-    trend === "up" ? "\u2191" : trend === "down" ? "\u2193" : "";
+const StatCard = ({ label, value, sub, trend, trendValue, className = "", accent }: StatCardProps): JSX.Element => {
+  const trendColor = trend === "up" ? "text-success" : trend === "down" ? "text-danger" : "text-[var(--color-text-secondary)]";
+  const trendIcon = trend === "up" ? "↑" : trend === "down" ? "↓" : "";
+  const colors = accent ? accentMap[accent] : null;
 
   return (
     <div className={`card ${className}`}>
-      <p className="text-xs font-medium text-muted">{label}</p>
-      <p className="mt-1 text-2xl font-bold">{value}</p>
-      {sub && <p className="mt-0.5 text-xs text-muted">{sub}</p>}
+      <p className="label-sm truncate">{label}</p>
+      <p className={`mt-1.5 text-[22px] font-bold amount-display leading-none ${colors ? colors.text : ""}`}>
+        {value}
+      </p>
+      {sub && <p className="mt-1 label-sm">{sub}</p>}
       {trend && trendValue && (
-        <p className={`mt-1 text-xs font-medium ${trendColor}`}>
+        <p className={`mt-1.5 text-[12px] font-medium ${trendColor}`}>
           {trendIcon} {trendValue}
         </p>
       )}

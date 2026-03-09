@@ -4,60 +4,153 @@
 
 @layer base {
   :root {
-    --color-bg: #f8fafc;
+    --color-bg: #f2f2f7;
     --color-surface: #ffffff;
-    --color-text: #0f172a;
-    --color-text-secondary: #64748b;
-    --color-border: #e2e8f0;
+    --color-surface2: #f2f2f7;
+    --color-surface3: #e5e5ea;
+    --color-text: #1c1c1e;
+    --color-text-secondary: #6e6e73;
+    --color-border: rgba(60, 60, 67, 0.18);
+    --color-separator: rgba(60, 60, 67, 0.12);
+    --nav-height: 56px;
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
     color-scheme: light;
   }
+
   .dark {
-    --color-bg: #0f172a;
-    --color-surface: #1e293b;
-    --color-text: #f1f5f9;
-    --color-text-secondary: #94a3b8;
-    --color-border: #334155;
+    --color-bg: #000000;
+    --color-surface: #1c1c1e;
+    --color-surface2: #2c2c2e;
+    --color-surface3: #3a3a3c;
+    --color-text: #f5f5f7;
+    --color-text-secondary: rgba(235, 235, 245, 0.6);
+    --color-border: rgba(84, 84, 88, 0.55);
+    --color-separator: rgba(84, 84, 88, 0.36);
     color-scheme: dark;
   }
-  html { -webkit-text-size-adjust: 100%; }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    scroll-behavior: smooth;
+  }
+
   body {
     margin: 0;
-    font-family: "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Hiragino Kaku Gothic ProN", "Yu Gothic", "Noto Sans JP", sans-serif;
     color: var(--color-text);
     background: var(--color-bg);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    overscroll-behavior: none;
   }
-  * { -webkit-tap-highlight-color: transparent; }
-  input, select, textarea, button { font-family: inherit; font-size: inherit; }
+
+  * {
+    -webkit-tap-highlight-color: transparent;
+    box-sizing: border-box;
+  }
+
+  input, select, textarea, button {
+    font-family: inherit;
+    font-size: inherit;
+  }
 }
 
 @layer components {
+  /* ── Cards ── */
   .card {
+    @apply rounded-2xl bg-[var(--color-surface)] p-4;
+  }
+  .card-elevated {
     @apply rounded-2xl bg-[var(--color-surface)] p-4 shadow-card;
   }
+  .card-inset {
+    @apply rounded-xl bg-[var(--color-surface2)] p-3;
+  }
+
+  /* ── Frosted glass ── */
+  .glass {
+    background: rgba(255, 255, 255, 0.82);
+    backdrop-filter: saturate(180%) blur(20px);
+    -webkit-backdrop-filter: saturate(180%) blur(20px);
+  }
+  .dark .glass {
+    background: rgba(28, 28, 30, 0.88);
+  }
+
+  /* ── Buttons ── */
   .btn-primary {
-    @apply inline-flex items-center justify-center rounded-xl bg-primary px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-primary-dark active:scale-[0.98] disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-primary px-5 py-3.5 text-[15px] font-semibold text-white shadow-btn transition-all active:scale-[0.97] active:brightness-95 disabled:opacity-50 disabled:shadow-none;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-4 py-2.5 text-sm font-medium transition-colors hover:bg-slate-50 dark:hover:bg-slate-800 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-[var(--color-surface2)] px-5 py-3.5 text-[15px] font-medium text-[var(--color-text)] transition-all active:scale-[0.97] active:brightness-95;
   }
   .btn-ghost {
-    @apply inline-flex items-center justify-center rounded-xl px-4 py-2.5 text-sm font-medium text-muted transition-colors hover:bg-slate-100 dark:hover:bg-slate-800;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-primary transition-all active:scale-[0.97];
   }
   .btn-danger {
-    @apply inline-flex items-center justify-center rounded-xl bg-danger px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-red-600 active:scale-[0.98];
+    @apply inline-flex items-center justify-center gap-2 rounded-2xl bg-danger px-5 py-3.5 text-[15px] font-semibold text-white transition-all active:scale-[0.97] active:brightness-95 disabled:opacity-50;
   }
+
+  /* ── Inputs ── */
   .input-field {
-    @apply w-full rounded-xl border border-[var(--color-border)] bg-[var(--color-surface)] px-3 py-2.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20;
+    @apply w-full rounded-xl bg-[var(--color-surface2)] px-4 py-3 text-[15px] text-[var(--color-text)] outline-none transition-all placeholder:text-[var(--color-text-secondary)] focus:ring-2 focus:ring-primary/30 focus:bg-[var(--color-surface)];
+  }
+
+  /* ── Typography ── */
+  .page-title {
+    @apply text-[22px] font-bold leading-tight tracking-tight;
   }
   .section-title {
-    @apply text-base font-semibold leading-tight;
+    @apply text-[17px] font-semibold leading-tight;
   }
-  .safe-bottom { padding-bottom: max(env(safe-area-inset-bottom, 0px), 8px); }
+  .label-sm {
+    @apply text-[13px] font-medium text-[var(--color-text-secondary)];
+  }
+
+  /* ── List rows ── */
+  .list-row {
+    @apply flex items-center justify-between py-3 border-b border-[var(--color-separator)] last:border-0;
+  }
+
+  /* ── Safe area ── */
+  .safe-bottom {
+    padding-bottom: max(var(--safe-bottom), 8px);
+  }
+  .pb-nav {
+    padding-bottom: calc(var(--nav-height) + max(var(--safe-bottom), 8px) + 16px);
+  }
+
+  /* ── Segment control ── */
+  .segment-control {
+    @apply flex rounded-xl bg-[var(--color-surface2)] p-1 gap-1;
+  }
+  .segment-item {
+    @apply flex-1 rounded-lg py-1.5 text-[13px] font-medium text-center transition-all;
+  }
+  .segment-item-active {
+    @apply bg-[var(--color-surface)] text-[var(--color-text)] shadow-card;
+  }
+  .segment-item-inactive {
+    @apply text-[var(--color-text-secondary)];
+  }
 }
 
 @layer utilities {
-  .scrollbar-hide { -ms-overflow-style: none; scrollbar-width: none; }
-  .scrollbar-hide::-webkit-scrollbar { display: none; }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hero gradient */
+  .gradient-hero {
+    background: linear-gradient(135deg, #0f766e 0%, #0d9488 50%, #0891b2 100%);
+  }
+
+  /* Amount display font (tabular nums) */
+  .amount-display {
+    @apply tabular-nums tracking-tight;
+  }
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { Routes, Route, Navigate, Outlet, NavLink, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { fetchSetupStatus } from "./api/client";
 import { useAuth } from "./contexts/AuthContext";
 import BottomNav from "./components/ui/BottomNav";
@@ -22,12 +22,12 @@ type BootState = "loading" | "setup" | "ready";
 
 const AppLayout = (): JSX.Element => {
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen bg-[var(--color-bg)]">
       <div className="hidden md:block">
         <Sidebar />
       </div>
-      <main className="flex-1 pb-20 md:ml-60 md:pb-0">
-        <div className="mx-auto max-w-4xl p-4 md:p-6">
+      <main className="flex-1 pb-nav md:ml-60 md:pb-6">
+        <div className="mx-auto max-w-lg px-4 pt-4 md:max-w-4xl md:px-6 md:pt-6">
           <Outlet />
         </div>
       </main>
@@ -45,11 +45,7 @@ const App = (): JSX.Element => {
   const checkSetup = useCallback(async () => {
     try {
       const status = await fetchSetupStatus();
-      if (!status.installed) {
-        setBootState("setup");
-      } else {
-        setBootState("ready");
-      }
+      setBootState(status.installed ? "ready" : "setup");
     } catch {
       setBootState("ready");
     }
@@ -61,10 +57,18 @@ const App = (): JSX.Element => {
 
   if (bootState === "loading" || isLoading) {
     return (
-      <div className="flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <p className="text-sm text-muted">読み込み中...</p>
+      <div className="flex min-h-screen flex-col items-center justify-center gap-4 bg-[var(--color-bg)]">
+        <div className="flex h-20 w-20 items-center justify-center rounded-3xl bg-primary shadow-hero">
+          <span className="text-3xl font-bold text-white">¥</span>
+        </div>
+        <div className="flex gap-1.5">
+          {[0, 1, 2].map((i) => (
+            <div
+              key={i}
+              className="h-2 w-2 rounded-full bg-primary animate-pulse"
+              style={{ animationDelay: `${i * 150}ms` }}
+            />
+          ))}
         </div>
       </div>
     );
